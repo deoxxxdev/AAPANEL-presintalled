@@ -5,8 +5,7 @@ PANEL_USER="admin"
 PANEL_PASSWORD="pppmmm"  # Change this
 PANEL_PORT="7800"  # Default aaPanel port
 
-# ===== INSTALLATION SCRIPT =====
-set -euo pipefail
+
 
 echo "[1] Installing required dependencies..."
 sudo apt update
