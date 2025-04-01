@@ -1,0 +1,85 @@
+#!/bin/bash
+
+# ===== CONFIGURATION =====
+PANEL_USER="admin"
+PANEL_PASSWORD="pppmmm"  # Change this
+PANEL_PORT="7800"  # Default aaPanel port
+
+# ===== INSTALLATION SCRIPT =====
+set -euo pipefail
+
+echo "[1] Installing required dependencies..."
+sudo apt update
+sudo apt install -y wget curl git unzip
+
+echo "[2] Downloading and installing aaPanel..."
+wget -O install.sh http://www.aapanel.com/script/install-ubuntu_6.0_en.sh
+sudo bash install.sh
+
+echo "[3] Waiting for aaPanel to start..."
+sleep 30  # Give aaPanel time to initialize
+
+echo "[4] Configuring aaPanel components..."
+# Login to aaPanel and install components
+BT_PANEL="http://$(hostname -I | awk '{print $1}'):$PANEL_PORT"
+
+# Function to send POST requests to aaPanel
+function panel_post {
+    curl -s -X POST "$BT_PANEL$1" \
+    -H "Content-Type: application/x-www-form-urlencoded" \
+    -d "username=$PANEL_USER" \
+    -d "password=$PANEL_PASSWORD" \
+    -d "$2"
+}
+
+# Install Nginx 1.24
+panel_post "/ajax?action=InstallSoft" "type=nginx&version=124"
+
+# Install MariaDB 10.3
+panel_post "/ajax?action=InstallSoft" "type=mysql&version=103"
+
+# Install Mail Server
+panel_post "/ajax?action=InstallSoft" "type=mail&version=52"
+
+# Install Redis
+panel_post "/ajax?action=InstallSoft" "type=redis&version=72"
+
+# Install Pure-FTPd
+panel_post "/ajax?action=InstallSoft" "type=ftp&version=149"
+
+# Install phpMyAdmin
+panel_post "/ajax?action=InstallSoft" "type=phpmyadmin&version=52"
+
+# Install PHP versions
+panel_post "/ajax?action=InstallSoft" "type=php&version=80"
+panel_post "/ajax?action=InstallSoft" "type=php&version=73"
+
+# Install additional tools
+panel_post "/ajax?action=InstallSoft" "type=tools&name=ip"
+panel_post "/ajax?action=InstallSoft" "type=tools&name=migration"
+panel_post "/ajax?action=InstallSoft" "type=tools&name=ftpstorage"
+panel_post "/ajax?action=InstallSoft" "type=tools&name=ffmpeg"
+panel_post "/ajax?action=InstallSoft" "type=tools&name=linux"
+panel_post "/ajax?action=InstallSoft" "type=tools&name=phpguardian"
+panel_post "/ajax?action=InstallSoft" "type=tools&name=logclean"
+panel_post "/ajax?action=InstallSoft" "type=tools&name=antispam"
+
+echo "[5] Finalizing installation..."
+# Set admin password (if not already set during install)
+panel_post "/ajax?action=SetPanelPassword" "password=$PANEL_PASSWORD"
+
+echo "[✅] Installation completed!"
+echo "================================="
+echo "aaPanel URL: $BT_PANEL"
+echo "Username: $PANEL_USER"
+echo "Password: $PANEL_PASSWORD"
+echo "================================="
+echo "Installed Components:"
+echo "- Nginx 1.24"
+echo "- MariaDB 10.3"
+echo "- Mail Server 5.2"
+echo "- Redis 7.2"
+echo "- Pure-FTPd 1.0.49"
+echo "- phpMyAdmin 5.2"
+echo "- PHP 8.0 & 7.3"
+echo "- All requested tools and plugins"
